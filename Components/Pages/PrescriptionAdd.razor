@@ -1,0 +1,168 @@
+﻿@page "/PrescriptionAdd"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+@using System.Linq
+@using Microsoft.EntityFrameworkCore
+@namespace drugSystemBlazor
+
+<PageTitle>处方单管理</PageTitle>
+<h3>处方单管理</h3>
+<p><i>已连接到数据库:@db.DBpath</i></p>
+
+<h4>添加处方单</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>病人姓名</th>
+            <th>病人是否拿药</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><input type="text" @bind="prescriptionToAdd.PatientName" /></td>
+            <td><input type="checkbox" @bind="prescriptionToAdd.IsPatientTakes" /></td>
+            <td>
+                <button class="btn btn-primary" @onclick="AddPrescription">添加</button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<h6>处方单药品列表</h6>
+@if (prescriptionDrugsToAdd.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>药品名称(搜索)</th>
+                <th>药品ID</th>
+                <th>药品名称</th>
+                <th>药品单价</th>
+                <th>药品库存</th>
+                <th>开药数量</th>
+                <th>药品总价</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var drug in prescriptionDrugsToAdd.Select((value, index) => new { value, index }))
+            {
+                <tr>
+                    <td><input type="text" @oninput="e => SearchByDrugName(e.Value.ToString(), drug.index)" /></td>
+                    <td>@drug.value.Drug.ID</td>
+                    <td>@drug.value.Drug.Name</td>
+                    <td>@drug.value.Drug.Price</td>
+                    <td>@drug.value.Drug.Quantity</td>
+                    <td>
+                        <input type="number" min="1" max="@drug.value.Drug.Quantity" @bind="drug.value.Quantity" @bind:event="oninput" />
+                    </td>
+                    <td>@CalculateDrugTotal(drug.value)</td>
+                    <td>
+                        <button class="btn btn-warning" @onclick="() => RemoveDrug(drug.index)">删除</button>
+                    </td>
+                </tr>
+            }
+            <tr>
+                <td colspan="6" class="text-right"><strong>处方单总价：</strong></td>
+                <td><strong>@PrescriptionTotal</strong></td>
+                <td><button class="btn btn-primary" @onclick="()=>UpdatePrescriptionTotal()">重新计算总价</button></td>
+            </tr>
+        </tbody>
+    </table>
+}
+else
+{
+    <p><em>处方中没有药品!</em></p>
+}
+<button class="btn btn-primary" @onclick="AddPrescriptionDrug">添加药品</button>
+
+@code {
+    private DSDBcontext db = new(); // 连接到数据库
+    private Prescription prescriptionToAdd = new() { IsPatientTakes = false, Drugs = new List<PrescriptionDrugs>() }; // 需要添加的处方单
+    private List<PrescriptionDrugs> prescriptionDrugsToAdd = new(); // 需要添加的处方单内的药品
+    private float PrescriptionTotal;
+
+    private void SearchByDrugName(string drugName, int index)
+    {
+        if (!string.IsNullOrWhiteSpace(drugName))
+        {
+            var foundDrug = db.Drugs.FirstOrDefault(d => d.Name.Contains(drugName));
+            if (foundDrug != null)
+            {
+                prescriptionDrugsToAdd[index].Drug = foundDrug;
+                prescriptionDrugsToAdd[index].DrugID = foundDrug.ID;
+                UpdatePrescriptionTotal(); // 更新总价
+            }
+        }
+    }
+
+    private void AddPrescriptionDrug()
+    {
+        prescriptionDrugsToAdd.Add(new PrescriptionDrugs { Drug = new Drug() });
+        UpdatePrescriptionTotal(); // 更新总价
+    }
+
+    private void RemoveDrug(int index)
+    {
+        prescriptionDrugsToAdd.RemoveAt(index);
+        UpdatePrescriptionTotal(); // 更新总价
+    }
+
+    private void UpdatePrescriptionTotal()
+    {
+        PrescriptionTotal = prescriptionDrugsToAdd.Sum(d => d.Drug?.Price * d.Quantity ?? 0);
+    }
+
+    private float CalculateDrugTotal(PrescriptionDrugs drug)
+    {
+        return drug.Drug?.Price * drug.Quantity ?? 0;
+    }
+
+    private void AddPrescription()
+    {
+        using (var transaction = db.Database.BeginTransaction())
+        {
+            try
+            {
+                foreach (var drugDetail in prescriptionDrugsToAdd)
+                {
+                    // 查找药品并减少库存数量
+                    var medicine = db.Drugs.Find(drugDetail.DrugID);
+                    if (medicine != null)
+                    {
+                        if (medicine.Quantity >= drugDetail.Quantity)
+                        {
+                            medicine.Quantity -= drugDetail.Quantity;
+                            prescriptionToAdd.Drugs.Add(drugDetail);
+                        }
+                        else
+                        {
+                            JS.InvokeVoidAsync("alert", $"药品库存不足: {medicine.Name}");
+                        }
+                    }
+                    else
+                    {
+                        JS.InvokeVoidAsync("alert", $"药品未找到: ID {drugDetail.DrugID}");
+                    }
+                }
+
+                db.Prescriptions.Add(prescriptionToAdd);
+                db.SaveChanges();
+                transaction.Commit();
+                JS.InvokeVoidAsync("alert", "处方添加成功!");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                // 处理异常
+                Console.WriteLine(ex.Message);
+            }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        db.Database.EnsureCreated(); // 确保数据库已创建
+    }
+}

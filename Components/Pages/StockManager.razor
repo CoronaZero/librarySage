@@ -1,0 +1,117 @@
+﻿@page "/StockManager"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+@using System.Linq
+@using Microsoft.EntityFrameworkCore
+@namespace drugSystemBlazor
+
+<PageTitle>进药管理</PageTitle>
+<h3>进药管理</h3>
+<p><i>已连接到数据库:@db.DBpath</i></p>
+
+<h4>查找药品</h4>
+<div>
+    <label>按库存数量小于:</label>
+    <input type="number" @bind="thresholdQuantity" />
+    <button class="btn btn-primary" @onclick="SearchByQuantity">查找</button>
+</div>
+<div>
+    <label>按药品名称:</label>
+    <input type="text" @bind="searchName" />
+    <button class="btn btn-primary" @onclick="SearchByName">查找</button>
+</div>
+
+<h6>查找结果</h6>
+@if (foundDrugs.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>药品ID</th>
+                <th>药品名称</th>
+                <th>药品单价</th>
+                <th>药品库存</th>
+                <th>进货量</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var drugInfo in foundDrugs)
+            {
+                <tr>
+                    <td>@drugInfo.Drug.ID</td>
+                    <td>@drugInfo.Drug.Name</td>
+                    <td>@drugInfo.Drug.Price</td>
+                    <td>@drugInfo.Drug.Quantity</td>
+                    <td>
+                        <input type="number" min="1" @bind="drugInfo.RestockQuantity" @bind:event="oninput" />
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => RestockDrug(drugInfo)">确认进货</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p><em>没有找到药品!</em></p>
+}
+
+@code {
+    private DSDBcontext db = new(); // 连接到数据库
+    private List<DrugRestockInfo> foundDrugs = new(); // 查找到的药品
+    private int thresholdQuantity; // 库存数量阈值
+    private string searchName; // 药品名称搜索
+
+    private class DrugRestockInfo
+    {
+        public Drug Drug { get; set; }
+        public int RestockQuantity { get; set; }
+    }
+
+    private void SearchByQuantity()
+    {
+        if (thresholdQuantity > 0)
+        {
+            var drugs = db.Drugs.Where(d => d.Quantity < thresholdQuantity).ToList();
+            foundDrugs = drugs.Select(d => new DrugRestockInfo { Drug = d }).ToList();
+        }
+    }
+
+    private void SearchByName()
+    {
+        if (!string.IsNullOrWhiteSpace(searchName))
+        {
+            var drugs = db.Drugs.Where(d => d.Name.Contains(searchName)).ToList();
+            foundDrugs = drugs.Select(d => new DrugRestockInfo { Drug = d }).ToList();
+        }
+    }
+
+    private async Task RestockDrug(DrugRestockInfo drugInfo)
+    {
+        if (drugInfo.RestockQuantity > 0)
+        {
+            var dbDrug = db.Drugs.Find(drugInfo.Drug.ID);
+            if (dbDrug != null)
+            {
+                dbDrug.Quantity += drugInfo.RestockQuantity;
+                db.SaveChanges();
+                await JS.InvokeVoidAsync("alert", $"药品 {dbDrug.Name} 进货成功，进货量：{drugInfo.RestockQuantity}");
+                // 更新找到的药品列表中的库存
+                drugInfo.Drug.Quantity = dbDrug.Quantity;
+                drugInfo.RestockQuantity = 0; // 重置进货量
+            }
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", "请输入有效的进货量");
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        db.Database.EnsureCreated(); // 确保数据库已创建
+    }
+}

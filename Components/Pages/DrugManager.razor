@@ -127,11 +127,12 @@ else
             }
             catch (Exception e)
             {
-                JS.InvokeVoidAsync("showAlert", e.Message);
+                JS.InvokeVoidAsync("alert", e.Message);
                 return;
             }
-            JS.InvokeVoidAsync("showAlert", "药品添加成功");
+            JS.InvokeVoidAsync("alert", "药品添加成功");
         }
+        StateHasChanged();
     }
 
     private void UpdateDrug(Drug drug)
@@ -143,7 +144,7 @@ else
         }
         catch (Exception e)
         {
-            JS.InvokeVoidAsync("showAlert", e.Message);
+            JS.InvokeVoidAsync("alert", e.Message);
             return;
         }
 
@@ -158,10 +159,10 @@ else
         }
         catch (Exception e)
         {
-            JS.InvokeVoidAsync("showAlert", e.Message);
+            JS.InvokeVoidAsync("alert", e.Message);
             return;
         }
-        JS.InvokeVoidAsync("showAlert", $"药品 {drug.Name} 删除成功");
+        JS.InvokeVoidAsync("alert", $"药品 {drug.Name} 删除成功");
     }
 
     private void SearchDrug(string dragName)
