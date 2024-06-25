@@ -33,7 +33,7 @@
                     <td><input type="text" @bind="drug.Quantity" /></td>
                     <td>
                         <button @onclick="()=>UpdateDrug(drug)" class="btn btn-primary">更新</button>
-                        <button @onclick="()=>DelDrug(drug)" class="btn btn-primary">删除</button>
+                        <button @onclick="()=>DelDrug(drug)" class="btn btn-warning">删除</button>
                     </td>
                 </tr>
             }
@@ -94,7 +94,7 @@ else
                     <td><input type="text" @bind="drug.Quantity" /></td>
                     <td>
                         <button @onclick="()=>UpdateDrug(drug)" class="btn btn-primary">更新</button>
-                        <button @onclick="()=>DelDrug(drug)" class="btn btn-primary">删除</button>
+                        <button @onclick="()=>DelDrug(drug)" class="btn btn-warning">删除</button>
                     </td>
                 </tr>
             }
@@ -176,4 +176,9 @@ else
         }
 
     }
+    protected override void OnInitialized()
+    {
+        db.Database.EnsureCreated(); // 确保数据库已创建
+    }
+
 }
