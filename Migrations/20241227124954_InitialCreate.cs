@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace drugSystemBlazor.Migrations
+namespace librarySage.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -11,7 +11,7 @@ namespace drugSystemBlazor.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Drugs",
+                name: "Books",
                 columns: table => new
                 {
                     ID = table.Column<int>(type: "INTEGER", nullable: false)
@@ -22,81 +22,81 @@ namespace drugSystemBlazor.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Drugs", x => x.ID);
+                    table.PrimaryKey("PK_Books", x => x.ID);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Prescriptions",
+                name: "Orders",
                 columns: table => new
                 {
                     ID = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    PatientName = table.Column<string>(type: "TEXT", nullable: false),
-                    IsPatientTakes = table.Column<bool>(type: "INTEGER", nullable: false)
+                    CustomName = table.Column<string>(type: "TEXT", nullable: false),
+                    IsTakes = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Prescriptions", x => x.ID);
+                    table.PrimaryKey("PK_Orders", x => x.ID);
                 });
 
             migrationBuilder.CreateTable(
-                name: "PrescriptionDrugs",
+                name: "OrderBooks",
                 columns: table => new
                 {
                     ID = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    DrugID = table.Column<int>(type: "INTEGER", nullable: false),
+                    BookID = table.Column<int>(type: "INTEGER", nullable: false),
                     Quantity = table.Column<int>(type: "INTEGER", nullable: false),
-                    PrescriptionID = table.Column<int>(type: "INTEGER", nullable: true)
+                    OrderID = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PrescriptionDrugs", x => x.ID);
+                    table.PrimaryKey("PK_OrderBooks", x => x.ID);
                     table.ForeignKey(
-                        name: "FK_PrescriptionDrugs_Drugs_DrugID",
-                        column: x => x.DrugID,
-                        principalTable: "Drugs",
+                        name: "FK_OrderBooks_Books_BookID",
+                        column: x => x.BookID,
+                        principalTable: "Books",
                         principalColumn: "ID",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_PrescriptionDrugs_Prescriptions_PrescriptionID",
-                        column: x => x.PrescriptionID,
-                        principalTable: "Prescriptions",
+                        name: "FK_OrderBooks_Orders_OrderID",
+                        column: x => x.OrderID,
+                        principalTable: "Orders",
                         principalColumn: "ID");
                 });
 
             migrationBuilder.CreateIndex(
-                name: "DrugName",
-                table: "Drugs",
+                name: "BookName",
+                table: "Books",
                 column: "Name");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PrescriptionDrugs_DrugID",
-                table: "PrescriptionDrugs",
-                column: "DrugID");
+                name: "IX_OrderBooks_BookID",
+                table: "OrderBooks",
+                column: "BookID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PrescriptionDrugs_PrescriptionID",
-                table: "PrescriptionDrugs",
-                column: "PrescriptionID");
+                name: "IX_OrderBooks_OrderID",
+                table: "OrderBooks",
+                column: "OrderID");
 
             migrationBuilder.CreateIndex(
-                name: "PatientNameIndex",
-                table: "Prescriptions",
-                column: "PatientName");
+                name: "CustomNameIndex",
+                table: "Orders",
+                column: "CustomName");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "PrescriptionDrugs");
+                name: "OrderBooks");
 
             migrationBuilder.DropTable(
-                name: "Drugs");
+                name: "Books");
 
             migrationBuilder.DropTable(
-                name: "Prescriptions");
+                name: "Orders");
         }
     }
 }

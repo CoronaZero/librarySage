@@ -1,0 +1,168 @@
+﻿@page "/OrderAdd"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+@using System.Linq
+@using Microsoft.EntityFrameworkCore
+@namespace librarySage
+
+<PageTitle>订单管理</PageTitle>
+<h3>订单管理</h3>
+<p><i>已连接到数据库:@db.DBpath</i></p>
+
+<h4>添加订单</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>客户姓名</th>
+            <th>客户是否已拿书</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><input type="text" @bind="orderToAdd.CustomName" /></td>
+            <td><input type="checkbox" @bind="orderToAdd.IsTakes" /></td>
+            <td>
+                <button class="btn btn-primary" @onclick="AddOrder">添加</button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<h6>订单图书列表</h6>
+@if (orderBooksToAdd.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>图书名称(搜索)</th>
+                <th>图书ID</th>
+                <th>图书名称</th>
+                <th>图书单价</th>
+                <th>图书库存</th>
+                <th>订购数量</th>
+                <th>图书总价</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var book in orderBooksToAdd.Select((value, index) => new { value, index }))
+            {
+                <tr>
+                    <td><input type="text" @oninput="e => SearchByBookName(e.Value.ToString(), book.index)" /></td>
+                    <td>@book.value.Book.ID</td>
+                    <td>@book.value.Book.Name</td>
+                    <td>@book.value.Book.Price</td>
+                    <td>@book.value.Book.Quantity</td>
+                    <td>
+                        <input type="number" min="1" max="@book.value.Book.Quantity" @bind="book.value.Quantity" @bind:event="oninput" />
+                    </td>
+                    <td>@CalculateBookTotal(book.value)</td>
+                    <td>
+                        <button class="btn btn-warning" @onclick="() => RemoveBook(book.index)">删除</button>
+                    </td>
+                </tr>
+            }
+            <tr>
+                <td colspan="6" class="text-right"><strong>订单总价：</strong></td>
+                <td><strong>@OrderTotal</strong></td>
+                <td><button class="btn btn-primary" @onclick="()=>UpdateOrderTotal()">重新计算总价</button></td>
+            </tr>
+        </tbody>
+    </table>
+}
+else
+{
+    <p><em>订单中没有图书!</em></p>
+}
+<button class="btn btn-primary" @onclick="AddOrderBook">添加图书</button>
+
+@code {
+    private DSDBcontext db = new(); // 连接到数据库
+    private Order orderToAdd = new() { IsTakes = false, Books = new List<OrderBooks>() }; // 需要添加的订单
+    private List<OrderBooks> orderBooksToAdd = new(); // 需要添加的订单内的图书
+    private float OrderTotal;
+
+    private void SearchByBookName(string bookName, int index)
+    {
+        if (!string.IsNullOrWhiteSpace(bookName))
+        {
+            var foundBook = db.Books.FirstOrDefault(d => d.Name.Contains(bookName));
+            if (foundBook != null)
+            {
+                orderBooksToAdd[index].Book = foundBook;
+                orderBooksToAdd[index].BookID = foundBook.ID;
+                UpdateOrderTotal(); // 更新总价
+            }
+        }
+    }
+
+    private void AddOrderBook()
+    {
+        orderBooksToAdd.Add(new OrderBooks { Book = new Book() });
+        UpdateOrderTotal(); // 更新总价
+    }
+
+    private void RemoveBook(int index)
+    {
+        orderBooksToAdd.RemoveAt(index);
+        UpdateOrderTotal(); // 更新总价
+    }
+
+    private void UpdateOrderTotal()
+    {
+        OrderTotal = orderBooksToAdd.Sum(d => d.Book?.Price * d.Quantity ?? 0);
+    }
+
+    private float CalculateBookTotal(OrderBooks book)
+    {
+        return book.Book?.Price * book.Quantity ?? 0;
+    }
+
+    private void AddOrder()
+    {
+        using (var transaction = db.Database.BeginTransaction())
+        {
+            try
+            {
+                foreach (var bookDetail in orderBooksToAdd)
+                {
+                    // 查找图书并减少库存数量
+                    var b = db.Books.Find(bookDetail.BookID);
+                    if (b != null)
+                    {
+                        if (b.Quantity >= bookDetail.Quantity)
+                        {
+                            b.Quantity -= bookDetail.Quantity;
+                            orderToAdd.Books.Add(bookDetail);
+                        }
+                        else
+                        {
+                            JS.InvokeVoidAsync("alert", $"图书库存不足: {b.Name}");
+                        }
+                    }
+                    else
+                    {
+                        JS.InvokeVoidAsync("alert", $"图书未找到: ID {bookDetail.BookID}");
+                    }
+                }
+
+                db.Orders.Add(orderToAdd);
+                db.SaveChanges();
+                transaction.Commit();
+                JS.InvokeVoidAsync("alert", "订单添加成功!");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                // 处理异常
+                Console.WriteLine(ex.Message);
+            }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        db.Database.EnsureCreated(); // 确保数据库已创建
+    }
+}

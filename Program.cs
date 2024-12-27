@@ -1,4 +1,4 @@
-using drugSystemBlazor.Components;
+using librarySage.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 

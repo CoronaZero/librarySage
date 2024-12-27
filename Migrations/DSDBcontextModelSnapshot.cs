@@ -3,11 +3,11 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using drugSystemBlazor;
+using librarySage;
 
 #nullable disable
 
-namespace drugSystemBlazor.Migrations
+namespace librarySage.Migrations
 {
     [DbContext(typeof(DSDBcontext))]
     partial class DSDBcontextModelSnapshot : ModelSnapshot
@@ -15,9 +15,9 @@ namespace drugSystemBlazor.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.6");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.11");
 
-            modelBuilder.Entity("drugSystemBlazor.Drug", b =>
+            modelBuilder.Entity("librarySage.Book", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
@@ -36,42 +36,42 @@ namespace drugSystemBlazor.Migrations
                     b.HasKey("ID");
 
                     b.HasIndex("Name")
-                        .HasDatabaseName("DrugName");
+                        .HasDatabaseName("BookName");
 
-                    b.ToTable("Drugs");
+                    b.ToTable("Books");
                 });
 
-            modelBuilder.Entity("drugSystemBlazor.Prescription", b =>
+            modelBuilder.Entity("librarySage.Order", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("IsPatientTakes")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("PatientName")
+                    b.Property<string>("CustomName")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsTakes")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("ID");
 
-                    b.HasIndex("PatientName")
-                        .HasDatabaseName("PatientNameIndex");
+                    b.HasIndex("CustomName")
+                        .HasDatabaseName("CustomNameIndex");
 
-                    b.ToTable("Prescriptions");
+                    b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("drugSystemBlazor.PrescriptionDrugs", b =>
+            modelBuilder.Entity("librarySage.OrderBooks", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("DrugID")
+                    b.Property<int>("BookID")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("PrescriptionID")
+                    b.Property<int?>("OrderID")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Quantity")
@@ -79,31 +79,31 @@ namespace drugSystemBlazor.Migrations
 
                     b.HasKey("ID");
 
-                    b.HasIndex("DrugID");
+                    b.HasIndex("BookID");
 
-                    b.HasIndex("PrescriptionID");
+                    b.HasIndex("OrderID");
 
-                    b.ToTable("PrescriptionDrugs");
+                    b.ToTable("OrderBooks");
                 });
 
-            modelBuilder.Entity("drugSystemBlazor.PrescriptionDrugs", b =>
+            modelBuilder.Entity("librarySage.OrderBooks", b =>
                 {
-                    b.HasOne("drugSystemBlazor.Drug", "Drug")
+                    b.HasOne("librarySage.Book", "Book")
                         .WithMany()
-                        .HasForeignKey("DrugID")
+                        .HasForeignKey("BookID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("drugSystemBlazor.Prescription", null)
-                        .WithMany("Drugs")
-                        .HasForeignKey("PrescriptionID");
+                    b.HasOne("librarySage.Order", null)
+                        .WithMany("Books")
+                        .HasForeignKey("OrderID");
 
-                    b.Navigation("Drug");
+                    b.Navigation("Book");
                 });
 
-            modelBuilder.Entity("drugSystemBlazor.Prescription", b =>
+            modelBuilder.Entity("librarySage.Order", b =>
                 {
-                    b.Navigation("Drugs");
+                    b.Navigation("Books");
                 });
 #pragma warning restore 612, 618
         }
