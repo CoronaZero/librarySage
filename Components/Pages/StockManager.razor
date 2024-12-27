@@ -1,117 +1,309 @@
-﻿@page "/StockManager"
+﻿@page "/OrderQuery"
 @rendermode InteractiveServer
 @inject IJSRuntime JS
 @using System.Linq
 @using Microsoft.EntityFrameworkCore
 @namespace bookSystemBlazor
 
-<PageTitle>图书进货管理</PageTitle>
-<h3>进货管理</h3>
-<p><i>已连接到数据库:@db.DBpath</i></p>
+<PageTitle>查询订单</PageTitle>
+<div class="mdui-p-a-2">
+    <h3 class="mdui-typo-headline">查询订单</h3>
+    <p class="mdui-typo-body-1"><i>已连接到数据库: @db.DBpath</i></p>
 
-<h4>查找图书</h4>
-<div>
-    <label>按库存数量小于:</label>
-    <input type="number" @bind="thresholdQuantity" />
-    <button class="btn btn-primary" @onclick="SearchByQuantity">查找</button>
-</div>
-<div>
-    <label>按图书名称:</label>
-    <input type="text" @bind="searchName" />
-    <button class="btn btn-primary" @onclick="SearchByName">查找</button>
+    <h4 class="mdui-typo-subheading">查找订单</h4>
+    <div class="mdui-row">
+        <div class="mdui-col-xs-6 mdui-textfield">
+            <input type="text" placeholder="客户姓名" @bind="searchCustomName" class="mdui-textfield-input" />
+        </div>
+        <div class="mdui-col-xs-6 mdui-textfield">
+            <input type="number" placeholder="订单ID" @bind="searchOrderId" class="mdui-textfield-input" />
+        </div>
+        <button class="mdui-btn mdui-btn-raised mdui-color-theme" @onclick="SearchOrder">查找</button>
+    </div>
+
+
+    @if (orderList.Any())
+    {
+        <h5 class="mdui-typo-subheading">查找到的订单</h5>
+        <div class="mdui-table-fluid">
+            <table class="mdui-table mdui-table-hoverable">
+                <thead>
+                    <tr>
+                        <th>订单ID</th>
+                        <th>客户姓名</th>
+                        <th>客户是否拿书</th>
+                        <th>订单总价</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in orderList)
+                    {
+                        <tr>
+                            <td>@order.ID</td>
+                            <td>@order.CustomName</td>
+                            <td>
+                                <label class="mdui-checkbox">
+                                    <input type="checkbox" @bind="order.IsTakes" />
+                                    <i class="mdui-checkbox-icon"></i>
+                                </label>
+                            </td>
+                            <td>@CalculateOrderTotal(order)</td>
+                            <td>
+                                <button class="mdui-btn mdui-btn-raised mdui-color-theme-accent" @onclick="() => LoadOrderDetails(order.ID)">查看详情</button>
+                                <button class="mdui-btn mdui-btn-raised mdui-color-red" @onclick="() => DeleteOrder(order)">删除订单</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (selectedOrder != null)
+    {
+        <h5 class="mdui-typo-subheading">订单详情</h5>
+        <div class="mdui-table-fluid">
+            <table class="mdui-table">
+                <thead>
+                    <tr>
+                        <th>客户姓名</th>
+                        <th>客户是否拿药</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>@selectedOrder.CustomName</td>
+                        <td>
+                            <label class="mdui-checkbox">
+                                <input type="checkbox" @bind="selectedOrder.IsTakes" />
+                                <i class="mdui-checkbox-icon"></i>
+                            </label>
+                        </td>
+                        <td><button class="mdui-btn mdui-btn-raised mdui-color-theme" @onclick="UpdateOrder">更新拿药信息</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h6 class="mdui-typo-subheading">订单图书列表</h6>
+        <div class="mdui-table-fluid">
+            <table class="mdui-table mdui-table-hoverable">
+                <thead>
+                    <tr>
+                        <th>图书ID</th>
+                        <th>图书名称</th>
+                        <th>图书单价</th>
+                        <th>图书库存</th>
+                        <th>订购数量</th>
+                        <th>总价</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var book in selectedOrder.Books.Select((value, index) => new { value, index }))
+                    {
+                        <tr>
+                            <td>@book.value.BookID</td>
+                            <td>@book.value.Book.Name</td>
+                            <td>@book.value.Book.Price</td>
+                            <td>@book.value.Book.Quantity</td>
+                            <td>
+                                <div class="mdui-textfield">
+                                    <input type="number" min="1" max="@book.value.Book.Quantity + book.value.Quantity" value="@book.value.Quantity" @onchange="(e) => UpdateBookQuantity(book.index, int.Parse(e.Value.ToString()))" class="mdui-textfield-input" />
+                                </div>
+                            </td>
+                            <td>@CalculateBookTotal(book.value)</td>
+                            <td>
+                                <button class="mdui-btn mdui-btn-icon mdui-color-red" @onclick="() => RemoveBookFromOrder(book.index)">
+                                    <i class="mdui-icon material-icons">delete</i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+
+        <h6 class="mdui-typo-subheading">添加图书</h6>
+        <div class="mdui-row">
+            <div class="mdui-col-xs-6">
+                <div class="mdui-select">
+                    <select @bind="selectedBookId" class="mdui-select-input">
+                        <option value="">选择图书</option>
+                        @foreach (var book in availableBooks)
+                        {
+                            <option value="@book.ID">@book.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="mdui-col-xs-6 mdui-textfield">
+                <input type="number" min="1" @bind="newBookQuantity" placeholder="数量" class="mdui-textfield-input" />
+            </div>
+        </div>
+
+        <button class="mdui-btn mdui-btn-raised mdui-color-theme-accent" @onclick="AddBookToOrder">添加图书</button>
+    }
 </div>
 
-<h6>查找结果</h6>
-@if (foundBooks.Any())
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>图书ID</th>
-                <th>图书名称</th>
-                <th>图书单价</th>
-                <th>图书库存</th>
-                <th>进货量</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var bookInfo in foundBooks)
-            {
-                <tr>
-                    <td>@bookInfo.Book.ID</td>
-                    <td>@bookInfo.Book.Name</td>
-                    <td>@bookInfo.Book.Price</td>
-                    <td>@bookInfo.Book.Quantity</td>
-                    <td>
-                        <input type="number" min="1" @bind="bookInfo.RestockQuantity" @bind:event="oninput" />
-                    </td>
-                    <td>
-                        <button class="btn btn-primary" @onclick="() => RestockBook(bookInfo)">确认进货</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <p><em>没有找到图书!</em></p>
-}
 
 @code {
     private DSDBcontext db = new(); // 连接到数据库
-    private List<BookRestockInfo> foundBooks = new(); // 查找到的图书
-    private int thresholdQuantity; // 库存数量阈值
-    private string searchName; // 图书名称搜索
+    private string searchCustomName = string.Empty;
+    private int searchOrderId;
+    private List<Order> orderList = new();
+    private Order selectedOrder;
+    private List<Book> availableBooks = new();
+    private int selectedBookId;
+    private int newBookQuantity;
 
-    private class BookRestockInfo
+    private void SearchOrder()
     {
-        public Book Book { get; set; }
-        public int RestockQuantity { get; set; }
-    }
-
-    private void SearchByQuantity()
-    {
-        if (thresholdQuantity > 0)
+        if (!string.IsNullOrWhiteSpace(searchCustomName))
         {
-            var books = db.Books.Where(d => d.Quantity < thresholdQuantity).ToList();
-            foundBooks = books.Select(d => new BookRestockInfo { Book = d }).ToList();
+            orderList = db.Orders
+                .Include(p => p.Books)
+                .ThenInclude(pd => pd.Book)
+                .Where(p => p.CustomName.Contains(searchCustomName))
+                .ToList();
+        }
+        else if (searchOrderId > 0)
+        {
+            orderList = db.Orders
+                .Include(p => p.Books)
+                .ThenInclude(pd => pd.Book)
+                .Where(p => p.ID == searchOrderId)
+                .ToList();
         }
     }
 
-    private void SearchByName()
+    private void LoadOrderDetails(int orderId)
     {
-        if (!string.IsNullOrWhiteSpace(searchName))
-        {
-            var books = db.Books.Where(d => d.Name.Contains(searchName)).ToList();
-            foundBooks = books.Select(d => new BookRestockInfo { Book = d }).ToList();
-        }
+        selectedOrder = db.Orders
+            .Include(p => p.Books)
+            .ThenInclude(pd => pd.Book)
+            .FirstOrDefault(p => p.ID == orderId);
+
+        LoadAvailableBooks(); // 加载可用图书列表
     }
 
-    private async Task RestockBook(BookRestockInfo bookInfo)
+    private void UpdateOrder()
     {
-        if (bookInfo.RestockQuantity > 0)
+        db.SaveChanges();
+        JS.InvokeVoidAsync("alert", "订单已更新");
+    }
+
+    private void UpdateBookQuantity(int index, int newQuantity)
+    {
+        var bookDetail = selectedOrder.Books[index];
+        var book = db.Books.Find(bookDetail.BookID);
+
+        if (book != null)
         {
-            var dbBook = db.Books.Find(bookInfo.Book.ID);
-            if (dbBook != null)
+            int originalQuantity = bookDetail.Quantity;
+            int quantityDifference = newQuantity - originalQuantity;
+
+            if (book.Quantity + originalQuantity >= newQuantity)
             {
-                dbBook.Quantity += bookInfo.RestockQuantity;
+                book.Quantity -= quantityDifference;
+                bookDetail.Quantity = newQuantity;
                 db.SaveChanges();
-                await JS.InvokeVoidAsync("alert", $"图书 {dbBook.Name} 进货成功，进货量：{bookInfo.RestockQuantity}");
-                // 更新找到的图书列表中的库存
-                bookInfo.Book.Quantity = dbBook.Quantity;
-                bookInfo.RestockQuantity = 0; // 重置进货量
             }
+            else
+            {
+                JS.InvokeVoidAsync("alert", "图书库存不足");
+            }
+        }
+    }
+
+    private void RemoveBookFromOrder(int index)
+    {
+        var bookDetail = selectedOrder.Books[index];
+        var book = db.Books.Find(bookDetail.BookID);
+
+        if (book != null)
+        {
+            book.Quantity += bookDetail.Quantity; // 恢复库存
+        }
+
+        selectedOrder.Books.RemoveAt(index);
+        db.SaveChanges();
+        JS.InvokeVoidAsync("alert", "图书已从处方中移除");
+    }
+
+    private void DeleteOrder(Order order)
+    {
+        db.Orders.Remove(order);
+        db.SaveChanges();
+        orderList.Remove(order);
+        JS.InvokeVoidAsync("alert", "订单已删除");
+    }
+
+    private void LoadAvailableBooks()
+    {
+        availableBooks = db.Books.ToList();
+    }
+
+    private void AddBookToOrder()
+    {
+        var bookToAdd = db.Books.Find(selectedBookId);
+
+        if (bookToAdd != null && newBookQuantity > 0)
+        {
+            if (selectedOrder.Books.Any(d => d.BookID == bookToAdd.ID))
+            {
+                var existingBook = selectedOrder.Books.First(d => d.BookID == bookToAdd.ID);
+                existingBook.Quantity += newBookQuantity;
+            }
+            else
+            {
+                var newOrderBook = new OrderBooks
+                    {
+                        BookID = bookToAdd.ID,
+                        Book = bookToAdd,
+                        Quantity = newBookQuantity
+                    };
+                selectedOrder.Books.Add(newOrderBook);
+            }
+
+            db.SaveChanges();
+            JS.InvokeVoidAsync("alert", "图书已添加到订单");
         }
         else
         {
-            await JS.InvokeVoidAsync("alert", "请输入有效的进货量");
+            JS.InvokeVoidAsync("alert", "请选择图书并输入有效数量");
         }
+    }
+
+    private float CalculateOrderTotal(Order order)
+    {
+        if (order.Books != null && order.Books.Any())
+        {
+            float? sum = order.Books.Sum(d => d.Book?.Price * d.Quantity);
+            return sum.GetValueOrDefault();
+        }
+        return 0;
+    }
+
+    private float CalculateBookTotal(OrderBooks book)
+    {
+        if (book != null && book.Book != null)
+        {
+            float? sum = book.Book.Price * book.Quantity;
+            return sum.GetValueOrDefault();
+        }
+        return 0;
     }
 
     protected override void OnInitialized()
     {
         db.Database.EnsureCreated(); // 确保数据库已创建
+        orderList = db.Orders.OrderBy(p => p.ID)
+           .Include(p => p.Books)
+           .ThenInclude(pd => pd.Book)
+           .ToList();
     }
 }

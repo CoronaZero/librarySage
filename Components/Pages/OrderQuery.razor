@@ -6,115 +6,149 @@
 @namespace bookSystemBlazor
 
 <PageTitle>查询订单</PageTitle>
-<h3>查询订单</h3>
-<p><i>已连接到数据库:@db.DBpath</i></p>
+<div class="mdui-p-a-2">
+    <h3 class="mdui-typo-headline">查询订单</h3>
+    <p class="mdui-typo-body-1"><i>已连接到数据库: @db.DBpath</i></p>
 
-<h4>查找订单</h4>
-<input type="text" placeholder="客户姓名" @bind="searchCustomName" />
-<input type="number" placeholder="订单ID" @bind="searchOrderId" />
-<button class="btn btn-primary" @onclick="SearchOrder">查找</button>
-
-@if (orderList.Any())
-{
-    <h5>查找到的订单</h5>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>订单ID</th>
-                <th>客户姓名</th>
-                <th>客户是否拿书</th>
-                <th>订单总价</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var order in orderList)
-            {
-                <tr>
-                    <td>@order.ID</td>
-                    <td>@order.CustomName</td>
-                    <td><input type="checkbox" @bind="order.IsTakes" /></td>
-                    <td>@CalculateOrderTotal(order)</td>
-                    <td>
-                        <button class="btn btn-primary" @onclick="() => LoadOrderDetails(order.ID)">查看详情</button>
-                        <button class="btn btn-danger" @onclick="() => DeleteOrder(order)">删除订单</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-
-@if (selectedOrder != null)
-{
-    <h5>订单详情</h5>
-    <div>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>客户姓名</th>
-                    <th>客户是否拿药</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>@selectedOrder.CustomName</td>
-                    <td><input type="checkbox" @bind="selectedOrder.IsTakes" /></td>
-                    <td><button class="btn btn-primary" @onclick="UpdateOrder">更新拿药信息</button></td>
-                </tr>
-            </tbody>
-        </table>
+    <h4 class="mdui-typo-subheading">查找订单</h4>
+    <div class="mdui-row">
+        <div class="mdui-col-xs-6 mdui-textfield">
+            <input type="text" placeholder="客户姓名" @bind="searchCustomName" class="mdui-textfield-input" />
+        </div>
+        <div class="mdui-col-xs-6 mdui-textfield">
+            <input type="number" placeholder="订单ID" @bind="searchOrderId" class="mdui-textfield-input" />
+        </div>
+        <button class="mdui-btn mdui-btn-raised mdui-color-theme" @onclick="SearchOrder">查找</button>
     </div>
 
-    <h6>订单图书列表</h6>
-    <div>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>图书ID</th>
-                    <th>图书名称</th>
-                    <th>图书单价</th>
-                    <th>图书库存</th>
-                    <th>订购数量</th>
-                    <th>总价</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var book in selectedOrder.Books.Select((value, index) => new { value, index }))
-                {
+
+    @if (orderList.Any())
+    {
+        <h5 class="mdui-typo-subheading">查找到的订单</h5>
+        <div class="mdui-table-fluid">
+            <table class="mdui-table mdui-table-hoverable">
+                <thead>
                     <tr>
-                        <td>@book.value.BookID</td>
-                        <td>@book.value.Book.Name</td>
-                        <td>@book.value.Book.Price</td>
-                        <td>@book.value.Book.Quantity</td>
-                        <td>
-                            <input type="number" min="1" max="@book.value.Book.Quantity + book.value.Quantity" value="@book.value.Quantity" @onchange="(e) => UpdateBookQuantity(book.index, int.Parse(e.Value.ToString()))" />
-                        </td>
-                        <td>@CalculateBookTotal(book.value)</td>
-                        <td>
-                            <button class="btn btn-warning" @onclick="() => RemoveBookFromOrder(book.index)">删除</button>
-                        </td>
+                        <th>订单ID</th>
+                        <th>客户姓名</th>
+                        <th>客户是否拿书</th>
+                        <th>订单总价</th>
+                        <th>操作</th>
                     </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    @foreach (var order in orderList)
+                    {
+                        <tr>
+                            <td>@order.ID</td>
+                            <td>@order.CustomName</td>
+                            <td>
+                                <label class="mdui-checkbox">
+                                    <input type="checkbox" @bind="order.IsTakes" />
+                                    <i class="mdui-checkbox-icon"></i>
+                                </label>
+                            </td>
+                            <td>@CalculateOrderTotal(order)</td>
+                            <td>
+                                <button class="mdui-btn mdui-btn-raised mdui-color-theme-accent" @onclick="() => LoadOrderDetails(order.ID)">查看详情</button>
+                                <button class="mdui-btn mdui-btn-raised mdui-color-red" @onclick="() => DeleteOrder(order)">删除订单</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 
-    <h6>添加图书</h6>
-    <div>
-        <select class="form-select" @bind="selectedBookId">
-            <option value="">选择图书</option>
-            @foreach (var book in availableBooks)
-            {
-                <option value="@book.ID">@book.Name</option>
-            }
-        </select>
-        <input type="number" min="1" @bind="newBookQuantity" placeholder="数量" />
-        <button class="btn btn-primary" @onclick="AddBookToOrder">添加图书</button>
-    </div>
-}
+    @if (selectedOrder != null)
+    {
+        <h5 class="mdui-typo-subheading">订单详情</h5>
+        <div class="mdui-table-fluid">
+            <table class="mdui-table">
+                <thead>
+                    <tr>
+                        <th>客户姓名</th>
+                        <th>客户是否拿药</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>@selectedOrder.CustomName</td>
+                        <td>
+                            <label class="mdui-checkbox">
+                                <input type="checkbox" @bind="selectedOrder.IsTakes" />
+                                <i class="mdui-checkbox-icon"></i>
+                            </label>
+                        </td>
+                        <td><button class="mdui-btn mdui-btn-raised mdui-color-theme" @onclick="UpdateOrder">更新拿药信息</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h6 class="mdui-typo-subheading">订单图书列表</h6>
+        <div class="mdui-table-fluid">
+            <table class="mdui-table mdui-table-hoverable">
+                <thead>
+                    <tr>
+                        <th>图书ID</th>
+                        <th>图书名称</th>
+                        <th>图书单价</th>
+                        <th>图书库存</th>
+                        <th>订购数量</th>
+                        <th>总价</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var book in selectedOrder.Books.Select((value, index) => new { value, index }))
+                    {
+                        <tr>
+                            <td>@book.value.BookID</td>
+                            <td>@book.value.Book.Name</td>
+                            <td>@book.value.Book.Price</td>
+                            <td>@book.value.Book.Quantity</td>
+                            <td>
+                                <div class="mdui-textfield">
+                                    <input type="number" min="1" max="@book.value.Book.Quantity + book.value.Quantity" value="@book.value.Quantity" @onchange="(e) => UpdateBookQuantity(book.index, int.Parse(e.Value.ToString()))" class="mdui-textfield-input" />
+                                </div>
+                            </td>
+                            <td>@CalculateBookTotal(book.value)</td>
+                            <td>
+                                <button class="mdui-btn mdui-btn-icon mdui-color-red" @onclick="() => RemoveBookFromOrder(book.index)">
+                                    <i class="mdui-icon material-icons">delete</i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+
+        <h6 class="mdui-typo-subheading">添加图书</h6>
+        <div class="mdui-row">
+            <div class="mdui-col-xs-6">
+                <div class="mdui-select">
+                    <select @bind="selectedBookId" class="mdui-select-input">
+                        <option value="">选择图书</option>
+                        @foreach (var book in availableBooks)
+                        {
+                            <option value="@book.ID">@book.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="mdui-col-xs-6 mdui-textfield">
+                <input type="number" min="1" @bind="newBookQuantity" placeholder="数量" class="mdui-textfield-input" />
+            </div>
+        </div>
+
+        <button class="mdui-btn mdui-btn-raised mdui-color-theme-accent" @onclick="AddBookToOrder">添加图书</button>
+    }
+</div>
+
 
 @code {
     private DSDBcontext db = new(); // 连接到数据库
@@ -267,6 +301,9 @@
     protected override void OnInitialized()
     {
         db.Database.EnsureCreated(); // 确保数据库已创建
-        orderList = db.Orders.OrderBy(p => p.ID).ToList();
+        orderList = db.Orders.OrderBy(p => p.ID)
+           .Include(p => p.Books)
+           .ThenInclude(pd => pd.Book)
+           .ToList();
     }
 }

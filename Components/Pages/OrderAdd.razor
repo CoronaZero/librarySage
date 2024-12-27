@@ -6,76 +6,101 @@
 @namespace librarySage
 
 <PageTitle>订单管理</PageTitle>
-<h3>订单管理</h3>
-<p><i>已连接到数据库:@db.DBpath</i></p>
 
-<h4>添加订单</h4>
-<table class="table">
-    <thead>
-        <tr>
-            <th>客户姓名</th>
-            <th>客户是否已拿书</th>
-            <th>操作</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><input type="text" @bind="orderToAdd.CustomName" /></td>
-            <td><input type="checkbox" @bind="orderToAdd.IsTakes" /></td>
-            <td>
-                <button class="btn btn-primary" @onclick="AddOrder">添加</button>
-            </td>
-        </tr>
-    </tbody>
-</table>
+<div class="mdui-p-a-2">
+    <h3 class="mdui-typo-headline">订单管理</h3>
+    <p class="mdui-typo-body-1"><i>已连接到数据库: @db.DBpath</i></p>
 
-<h6>订单图书列表</h6>
-@if (orderBooksToAdd.Any())
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>图书名称(搜索)</th>
-                <th>图书ID</th>
-                <th>图书名称</th>
-                <th>图书单价</th>
-                <th>图书库存</th>
-                <th>订购数量</th>
-                <th>图书总价</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var book in orderBooksToAdd.Select((value, index) => new { value, index }))
-            {
+    <h4 class="mdui-typo-subheading">添加订单</h4>
+    <div class="mdui-table-fluid">
+        <table class="mdui-table">
+            <thead>
                 <tr>
-                    <td><input type="text" @oninput="e => SearchByBookName(e.Value.ToString(), book.index)" /></td>
-                    <td>@book.value.Book.ID</td>
-                    <td>@book.value.Book.Name</td>
-                    <td>@book.value.Book.Price</td>
-                    <td>@book.value.Book.Quantity</td>
+                    <th>客户姓名</th>
+                    <th>客户是否已拿书</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
                     <td>
-                        <input type="number" min="1" max="@book.value.Book.Quantity" @bind="book.value.Quantity" @bind:event="oninput" />
+                        <div class="mdui-textfield">
+                            <input type="text" @bind="orderToAdd.CustomName" class="mdui-textfield-input" />
+                        </div>
                     </td>
-                    <td>@CalculateBookTotal(book.value)</td>
                     <td>
-                        <button class="btn btn-warning" @onclick="() => RemoveBook(book.index)">删除</button>
+                        <label class="mdui-checkbox">
+                            <input type="checkbox" @bind="orderToAdd.IsTakes" />
+                            <i class="mdui-checkbox-icon"></i>
+                        </label>
+                    </td>
+                    <td>
+                        <button class="mdui-btn mdui-btn-raised mdui-color-theme-accent" @onclick="AddOrder">添加</button>
                     </td>
                 </tr>
-            }
-            <tr>
-                <td colspan="6" class="text-right"><strong>订单总价：</strong></td>
-                <td><strong>@OrderTotal</strong></td>
-                <td><button class="btn btn-primary" @onclick="()=>UpdateOrderTotal()">重新计算总价</button></td>
-            </tr>
-        </tbody>
-    </table>
-}
-else
-{
-    <p><em>订单中没有图书!</em></p>
-}
-<button class="btn btn-primary" @onclick="AddOrderBook">添加图书</button>
+            </tbody>
+        </table>
+    </div>
+
+    <h6 class="mdui-typo-subheading">订单图书列表</h6>
+    @if (orderBooksToAdd.Any())
+    {
+        <div class="mdui-table-fluid">
+            <table class="mdui-table mdui-table-hoverable">
+                <thead>
+                    <tr>
+                        <th>图书名称(搜索)</th>
+                        <th>图书ID</th>
+                        <th>图书名称</th>
+                        <th>图书单价</th>
+                        <th>图书库存</th>
+                        <th>订购数量</th>
+                        <th>图书总价</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var book in orderBooksToAdd.Select((value, index) => new { value, index }))
+                    {
+                        <tr>
+                            <td>
+                                <div class="mdui-textfield">
+                                    <input type="text" @oninput="e => SearchByBookName(e.Value.ToString(), book.index)" class="mdui-textfield-input" />
+                                </div>
+                            </td>
+                            <td>@book.value.Book.ID</td>
+                            <td>@book.value.Book.Name</td>
+                            <td>@book.value.Book.Price</td>
+                            <td>@book.value.Book.Quantity</td>
+                            <td>
+                                <div class="mdui-textfield">
+                                    <input type="number" min="1" max="@book.value.Book.Quantity" @bind="book.value.Quantity" @bind:event="oninput" class="mdui-textfield-input" />
+                                </div>
+                            </td>
+                            <td>@CalculateBookTotal(book.value)</td>
+                            <td>
+                                <button class="mdui-btn mdui-btn-icon mdui-color-red" @onclick="() => RemoveBook(book.index)">
+                                    <i class="mdui-icon material-icons">delete</i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                    <tr>
+                        <td colspan="6" class="text-right"><strong>订单总价：</strong></td>
+                        <td><strong>@OrderTotal</strong></td>
+                        <td><button class="mdui-btn mdui-btn-raised mdui-color-theme" @onclick="()=>UpdateOrderTotal()">重新计算总价</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <p class="mdui-typo-body-1"><em>订单中没有图书!</em></p>
+    }
+    <button class="mdui-btn mdui-btn-raised mdui-color-theme-accent" @onclick="AddOrderBook">添加图书</button>
+</div>
+
 
 @code {
     private DSDBcontext db = new(); // 连接到数据库

@@ -6,105 +6,116 @@
 @namespace librarySage
 
 <PageTitle>图书库存管理页面</PageTitle>
-<h3>图书库存管理</h3>
-<p><i>已连接到数据库:@db.DBpath</i></p>
+
+<div class="mdui-p-a-2">
+    <h3 class="mdui-typo-headline">图书库存管理</h3>
+    <p class="mdui-typo-body-1"><i>已连接到数据库: @db.DBpath</i></p>
 
 
-@if (db.Books.Any())
-{
-    <h4>图书列表</h4>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>图书ID</th>
-                <th>图书名称</th>
-                <th>图书单价</th>
-                <th>图书库存</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (Book book in db.Books.OrderBy(d => d.ID).ToList())
-            {
+    @if (db.Books.Any())
+    {
+        <h4 class="mdui-typo-subheading">图书列表</h4>
+        <div class="mdui-table-fluid">
+            <table class="mdui-table mdui-table-hoverable">
+                <thead>
+                    <tr>
+                        <th>图书ID</th>
+                        <th>图书名称</th>
+                        <th>图书单价</th>
+                        <th>图书库存</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (Book book in db.Books.OrderBy(d => d.ID).ToList())
+                    {
+                        <tr>
+                            <td>@book.ID</td>
+                            <td><input type="text" @bind="book.Name" class="mdui-textfield-input" /></td>
+                            <td><input type="text" @bind="book.Price" class="mdui-textfield-input" /></td>
+                            <td><input type="text" @bind="book.Quantity" class="mdui-textfield-input" /></td>
+                            <td>
+                                <button @onclick="()=>UpdateBook(book)" class="mdui-btn mdui-btn-raised mdui-color-theme-accent">更新</button>
+                                <button @onclick="()=>DelBook(book)" class="mdui-btn mdui-btn-raised mdui-color-red">删除</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <p class="mdui-typo-body-1"><strong>数据库内图书为空!</strong></p>
+    }
+
+    <hr class="mdui-divider" />
+
+    <h4 class="mdui-typo-subheading">添加图书...</h4>
+    <div class="mdui-table-fluid">
+        <table class="mdui-table">
+            <thead>
                 <tr>
-                    <td>@book.ID</td>
-                    <td><input type="text" @bind="book.Name" /></td>
-                    <td><input type="text" @bind="book.Price" /></td>
-                    <td><input type="text" @bind="book.Quantity" /></td>
-                    <td>
-                        <button @onclick="()=>UpdateBook(book)" class="btn btn-primary">更新</button>
-                        <button @onclick="()=>DelBook(book)" class="btn btn-warning">删除</button>
-                    </td>
+                    <th>图书名称</th>
+                    <th>图书单价</th>
+                    <th>图书库存</th>
+                    <th>操作</th>
                 </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <p><strong>数据库内图书为空!</strong></p>
-}
-
-<hr style="height:16px;color:gray" />
-
-<h4>添加图书...</h4>
-<table class="table">
-    <thead>
-        <tr>
-            <th>图书名称</th>
-            <th>图书单价</th>
-            <th>图书库存</th>
-            <th>操作</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><input @bind="bookToAdd.Name" /></td>
-            <td><input @bind="bookToAdd.Price" /></td>
-            <td><input @bind="bookToAdd.Quantity" /></td>
-            <td><button @onclick="AddBook" class="btn btn-primary">添加图书</button></td>
-        </tr>
-    </tbody>
-</table>
-
-<hr style="height:16px;color:gray" />
-
-<h4>图书查找(按名称)</h4>
-<input type="text" @bind="bookNameToSearch" />
-<button class="btn btn-primary" @onclick="()=>SearchBook(bookNameToSearch)">查找</button>
-@if (bookSearchResult.Any())
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>图书ID</th>
-                <th>图书名称</th>
-                <th>图书单价</th>
-                <th>图书库存</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (Book book in bookSearchResult)
-            {
+            </thead>
+            <tbody>
                 <tr>
-                    <td>@book.ID</td>
-                    <td><input type="text" @bind="book.Name" /></td>
-                    <td><input type="text" @bind="book.Price" /></td>
-                    <td><input type="text" @bind="book.Quantity" /></td>
-                    <td>
-                        <button @onclick="()=>UpdateBook(book)" class="btn btn-primary">更新</button>
-                        <button @onclick="()=>DelBook(book)" class="btn btn-warning">删除</button>
-                    </td>
+                    <td><input @bind="bookToAdd.Name" class="mdui-textfield-input" /></td>
+                    <td><input @bind="bookToAdd.Price" class="mdui-textfield-input" /></td>
+                    <td><input @bind="bookToAdd.Quantity" class="mdui-textfield-input" /></td>
+                    <td><button @onclick="AddBook" class="mdui-btn mdui-btn-raised mdui-color-theme-accent">添加图书</button></td>
                 </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <p>无结果</p>
-}
+            </tbody>
+        </table>
+    </div>
+
+    <hr class="mdui-divider" />
+
+    <h4 class="mdui-typo-subheading">图书查找(按名称)</h4>
+    <div class="mdui-textfield">
+        <input type="text" @bind="bookNameToSearch" class="mdui-textfield-input" />
+    </div>
+    <button class="mdui-btn mdui-btn-raised mdui-color-theme" @onclick="()=>SearchBook(bookNameToSearch)">查找</button>
+    @if (bookSearchResult.Any())
+    {
+        <div class="mdui-table-fluid">
+            <table class="mdui-table mdui-table-hoverable">
+                <thead>
+                    <tr>
+                        <th>图书ID</th>
+                        <th>图书名称</th>
+                        <th>图书单价</th>
+                        <th>图书库存</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (Book book in bookSearchResult)
+                    {
+                        <tr>
+                            <td>@book.ID</td>
+                            <td><input type="text" @bind="book.Name" class="mdui-textfield-input" /></td>
+                            <td><input type="text" @bind="book.Price" class="mdui-textfield-input" /></td>
+                            <td><input type="text" @bind="book.Quantity" class="mdui-textfield-input" /></td>
+                            <td>
+                                <button @onclick="()=>UpdateBook(book)" class="mdui-btn mdui-btn-raised mdui-color-theme-accent">更新</button>
+                                <button @onclick="()=>DelBook(book)" class="mdui-btn mdui-btn-raised mdui-color-red">删除</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <p class="mdui-typo-body-1">无结果</p>
+    }
+</div>
 
 @code {
     private DSDBcontext db = new DSDBcontext(); //连接到数据库

@@ -1,23 +1,83 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
+<body class="mdui-theme-primary-teal mdui-theme-accent-red mdui-theme-layout-auto mdui-drawer-body-left">
+    <!-- 顶部工具栏 -->
+    <div class="mdui-appbar mdui-shadow-6">
+        <div class="mdui-toolbar mdui-color-theme mdui-appbar-inset">
+            <!-- 侧边栏 -->
+            <a href="javascript:;" class="mdui-btn mdui-btn-icon" mdui-drawer="{target: '#left-drawer'}">
+                <i class="mdui-icon material-icons">menu</i>
+            </a>
+            <!-- 标题 -->
+            <span class="mdui-typo-title">图书贤者</span>
+            <!-- 分隔元素 -->
+            <div class="mdui-toolbar-spacer"></div>
+            <!-- 搜索页面超链接 -->
+            <a href="/OrderQuery" class="mdui-btn mdui-btn-icon">
+                <i class="mdui-icon material-icons">search</i>
+            </a>
+
+            <!-- 用户操作菜单按钮 -->
+            <a href="javascript:;" class="mdui-btn mdui-btn-icon" mdui-menu="{target: '#user-opt'}">
+                <i class="mdui-icon material-icons">more_vert</i>
+            </a>
+            
+        </div>
     </div>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+    <!-- 侧边栏 -->
+    <div class="mdui-drawer mdui-color-white" id="left-drawer">
+        <ul class="mdui-list">
+            <li class="mdui-list-item mdui-ripple">
+                <a href="/Book" class="mdui-list-item">
+                    <i class="mdui-list-item-icon mdui-icon material-icons">home</i>
+                    <div class="mdui-list-item-content">首页</div>
+                </a>
+            </li>
+            <li class="mdui-list-item mdui-ripple">
+                <a href="/StockManager" class="mdui-list-item">
+                    <i class="mdui-list-item-icon mdui-icon material-icons">add_shopping_cart</i>
+                    <div class="mdui-list-item-content">图书进货</div>
+                </a>
+            </li>
+            <li class="mdui-list-item mdui-ripple">
+                <a href="/OrderAdd" class="mdui-list-item">
+                    <i class="mdui-list-item-icon mdui-icon material-icons">add_box</i>
+                    <div class="mdui-list-item-content">订单添加</div>
+                </a>
+            </li>
+            <li class="mdui-list-item mdui-ripple">
+                <a href="/OrderQuery" class="mdui-list-item">
+                    <i class="mdui-list-item-icon mdui-icon material-icons">search</i>
+                    <div class="mdui-list-item-content">订单查询</div>
+                </a>
+            </li>
+            <!-- 分隔符 -->
+            <li class="mdui-divider"></li>
+            
+        </ul>
+    </div>
+
+    <div id="app" class="mdui-container">
+        @Body
+    </div>
+
+    <footer class="mdui-m-t-5 mdui-shadow-2">
+        <div class="mdui-p-a-3 mdui-typo">
+            <center>
+                <p>
+                    <a href="/">
+                        <at>图书贤者</at>
+                    </a>
+                    Code by <a href="#">
+                        <st>绫织梦CoronaZero</st>
+                    </a>
+                </p>
+            </center>
         </div>
+    </footer>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
-
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
-</div>
+    <!-- MDUI JavaScript -->
+    <script src="/lib/mdui/js/mdui.min.js"></script>
+    <script src="/lib/jquery/dist/jquery.min.js"></script>
+</body>
